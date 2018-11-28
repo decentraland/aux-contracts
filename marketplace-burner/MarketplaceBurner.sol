@@ -34,6 +34,6 @@ contract MarketplaceBurner is Ownable {
     }
 
     function unpause() public onlyOwner {
-        marketplace.pause();
+        marketplace.unpause();
     }
 }
