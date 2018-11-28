@@ -9,6 +9,7 @@ interface BurnableERC20 {
 interface Marketplace {
     function setOwnerCutPerMillion(uint256 _ownerCutPerMillion) external;
     function pause() public;
+    function unpause() public;
 }
 
 contract MarketplaceBurner is Ownable {
