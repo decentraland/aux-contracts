@@ -7,6 +7,7 @@ interface BurnableERC20 {
 }
 
 interface Marketplace {
+    function transferOwnership(address) public;
     function setOwnerCutPerMillion(uint256 _ownerCutPerMillion) external;
     function pause() public;
     function unpause() public;
@@ -24,6 +25,10 @@ contract MarketplaceBurner is Ownable {
 
     function burn() public {
         mana.burn(mana.balanceOf(this));
+    }
+
+    function transferMarketplaceOwnership(address target) public {
+        marketplace.transferOwnership(target);
     }
 
     function setOwnerCutPerMillion(uint256 _ownerCutPerMillion) public onlyOwner {
