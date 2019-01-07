@@ -27,7 +27,7 @@ contract MarketplaceBurner is Ownable {
         mana.burn(mana.balanceOf(this));
     }
 
-    function transferMarketplaceOwnership(address target) public {
+    function transferMarketplaceOwnership(address target) public onlyOwner {
         marketplace.transferOwnership(target);
     }
 
