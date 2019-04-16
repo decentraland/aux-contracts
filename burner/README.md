@@ -1,0 +1,1 @@
+# Decentraland Burner Contract
