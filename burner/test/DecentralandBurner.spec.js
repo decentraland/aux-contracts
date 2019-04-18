@@ -12,29 +12,6 @@ const expect = require('chai').use(require('bn-chai')(BN)).expect
 
 const DecentralandBurner = artifacts.require('DecentralandBurner')
 
-function assertEvent(log, expectedEventName, expectedArgs) {
-  const { event, args } = log
-  event.should.be.eq(expectedEventName)
-
-  if (expectedArgs) {
-    for (let key in expectedArgs) {
-      let value = args[key]
-      if (value instanceof BN) {
-        value = value.toString()
-      }
-      value.should.be.equal(expectedArgs[key], `[assertEvent] ${key}`)
-    }
-  }
-}
-
-async function getEvents(contract, eventName) {
-  return new Promise((resolve, reject) => {
-    contract[eventName]().get(function(err, logs) {
-      if (err) reject(new Error(`Error fetching the ${eventName} events`))
-      resolve(logs)
-    })
-  })
-}
 describe('DecentralandBurner', function() {
   this.timeout(10000)
   // Accounts
@@ -118,21 +95,54 @@ describe('DecentralandBurner', function() {
       let isOwner = await burnerContract.isContractOwner(
         marketplaceContract.address
       )
+      let currentOwner = await marketplaceContract.owner()
+
       expect(isOwner).to.be.equal(true)
+      expect(currentOwner).to.be.equal(burnerContract.address)
 
       const data = await marketplaceContract.contract.methods
         .transferOwnership(deployer)
         .encodeABI()
 
-      await burnerContract.execute(marketplaceContract.address, data, fromOwner)
+      const { logs } = await burnerContract.execute(
+        marketplaceContract.address,
+        data,
+        fromOwner
+      )
+
+      expect(logs.length).to.be.equal(2)
+
+      const log = logs[1]
+      log.event.should.be.equal('Executed')
+      log.args._target.should.be.equal(marketplaceContract.address)
+      log.args._data.should.be.equal(data)
 
       isOwner = await burnerContract.isContractOwner(
         marketplaceContract.address
       )
-      expect(isOwner).to.be.equal(false)
+      currentOwner = await marketplaceContract.owner()
 
-      const owner = await marketplaceContract.owner()
-      expect(owner).to.be.equal(deployer)
+      expect(isOwner).to.be.equal(false)
+      expect(currentOwner).to.be.equal(deployer)
+    })
+
+    it('should return response if the call was a successs', async function() {
+      const data = await marketplaceContract.contract.methods
+        .orderByAssetId(erc721Contract.address, ORDERS.one.tokenId)
+        .encodeABI()
+
+      const res = await burnerContract.contract.methods
+        .execute(marketplaceContract.address, data)
+        .call(fromOwner)
+
+      const order = web3.eth.abi.decodeParameters(
+        ['bytes32', 'address', 'address', 'uint256', 'uint256'],
+        res
+      )
+
+      expect(order[1]).to.be.equal(accounts[ORDERS.one.seller])
+      expect(order[2]).to.be.equal(erc721Contract.address)
+      expect(order[3]).to.be.equal(ORDERS.one.price)
     })
 
     it('should pause owned contract', async function() {
@@ -149,17 +159,26 @@ describe('DecentralandBurner', function() {
       expect(isPaused).to.be.equal(true)
     })
 
+    it('reverts if call is not a success', async function() {
+      const data = await manaContract.contract.methods
+        .mint(owner, INITIAL_VALUE)
+        .encodeABI()
+
+      await assertRevert(
+        burnerContract.execute(manaContract.address, data, fromOwner),
+        'Call error'
+      )
+    })
+
     it('reverts if trying to call execute recursively', async function() {
       const data = await burnerContract.contract.methods
         .execute(burnerContract.address, '0x')
         .encodeABI()
 
-      const res = await burnerContract.contract.methods
-        .execute(burnerContract.address, data)
-        .call(fromOwner)
-
-      expect(res[0]).to.be.equal(false)
-      expect(res[1]).to.be.equal(null)
+      await assertRevert(
+        burnerContract.execute(burnerContract.address, data, fromOwner),
+        'Call error'
+      )
     })
 
     it('reverts if not owner wants to execute', async function() {

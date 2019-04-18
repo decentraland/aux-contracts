@@ -51,8 +51,9 @@ if ganache_running; then
 else
   echo "Starting our own ganache instance"
   start_ganache
+  sleep 1
 fi
 
 
 #npx buidler test
-node_modules/.bin/buidler test --show-stack-traces
+npx buidler test

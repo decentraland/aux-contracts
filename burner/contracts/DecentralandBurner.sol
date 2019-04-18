@@ -9,25 +9,59 @@ interface ERC20 {
 
 contract DecentralandBurner is Ownable {
     ERC20 public mana;
+    event Executed(address indexed _target, bytes _data);
 
-    constructor(address manaAddress) public {
-        mana = ERC20(manaAddress);
+    /**
+    * @dev Constructor of the contract.
+    * @param _mana - address for the mana contract.
+    */
+    constructor(address _mana) public {
+        mana = ERC20(_mana);
     }
 
-    function execute(address payable _target, bytes calldata _bytes) 
+    /**
+    * @dev Execute a target function with value and data.
+    * @notice This function can be only called by the owner of the contract.
+    * The msg.sender of the call will be this contract address.
+    * The msg.data will be whatever it is on _data parameter.
+    * _data should start with 4 bytes related to a function selector 0x12345678....
+    * If you send ETH to this method, it will be redirected to the target.
+    * @param _target - address for the target contract.
+    * @param _data - bytes for the msg.data.
+    * @return response - bytes for the call response.
+    */
+    function execute(address payable _target, bytes calldata _data) 
     external 
     payable 
     onlyOwner 
-    returns (bool success, bytes memory response)
+    returns (bytes memory)
     {
         // solium-disable-next-line security/no-call-value
-        (success, response) = _target.call.value(msg.value)(_bytes);
+        (bool success, bytes memory response) = _target.call.value(msg.value)(_data);
+
+        if (!success) {
+            revert("Call error");
+        }
+        
+        emit Executed(_target, _data);
+
+        return response;
     }
 
+    /**
+    * @dev Burn MANA owned by this contract 
+    */
     function burn() external {
         mana.burn(mana.balanceOf(address(this)));
     }
 
+    /**
+    * @dev Check whether a contract is owned by this contract.
+    * @notice If the _target contract is not a contract or not implement
+    * owner() function, the call will fail.
+    * @param _target - address for the target contract.
+    * @return bool whether the _target contract is owned by this contract or not.
+    */
     function isContractOwner(address _target) external view returns (bool) {
         return Ownable(_target).owner() == address(this);
     }
