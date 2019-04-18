@@ -135,6 +135,33 @@ describe('DecentralandBurner', function() {
       expect(owner).to.be.equal(deployer)
     })
 
+    it('should pause owned contract', async function() {
+      let isPaused = await marketplaceContract.paused()
+      expect(isPaused).to.be.equal(false)
+
+      const data = await marketplaceContract.contract.methods
+        .pause()
+        .encodeABI()
+
+      await burnerContract.execute(marketplaceContract.address, data, fromOwner)
+
+      isPaused = await marketplaceContract.paused()
+      expect(isPaused).to.be.equal(true)
+    })
+
+    it('reverts if trying to call execute recursively', async function() {
+      const data = await burnerContract.contract.methods
+        .execute(burnerContract.address, '0x')
+        .encodeABI()
+
+      const res = await burnerContract.contract.methods
+        .execute(burnerContract.address, data)
+        .call(fromOwner)
+
+      expect(res[0]).to.be.equal(false)
+      expect(res[1]).to.be.equal(null)
+    })
+
     it('reverts if not owner wants to execute', async function() {
       await assertRevert(
         burnerContract.execute(marketplaceContract.address, '0x')

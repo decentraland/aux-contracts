@@ -8,8 +8,8 @@ trap cleanup EXIT
 
 cleanup() {
   # Kill the ganache instance that we started (if we started one and if it's still running).
-  if [ -n "$ganache_current_pid" ] && ps -p $ganache_current_pid > /dev/null; then
-    kill -9 $ganache_current_pid
+  if [ -n "$ganache_pid" ] && ps -p $ganache_pid > /dev/null; then
+    kill -9 $ganache_pid
   fi
 }
 
@@ -43,7 +43,7 @@ start_ganache() {
 
   node_modules/.bin/ganache-cli --gasLimit 0xfffffffffff "${accounts[@]}" --port "$ganache_port" > /dev/null &
 
-  ganache_current_pid=$!
+  ganache_pid=$!
 }
 
 if ganache_running; then
