@@ -1,7 +1,7 @@
 #! /bin/bash
 
-BID=ERC721Bid.sol
+BURNER=DecentralandBurner.sol
 
 OUTPUT=full
 
-npx truffle-flattener contracts/bid/$BID > $OUTPUT/$BID
+npx truffle-flattener contracts/$BURNER > $OUTPUT/$BURNER
