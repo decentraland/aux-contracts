@@ -1,1 +1,0 @@
-/Users/imazzara/Documents/decentraland/aux-contracts/burner/buidler.config.js

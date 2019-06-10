@@ -30,26 +30,27 @@ contract DecentralandBurner is Ownable {
     * @param _data - bytes for the msg.data.
     * @return response - bytes for the call response.
     */
-    function execute(address payable _target, bytes calldata _data) 
-    external 
-    payable 
-    onlyOwner 
+    function execute(address payable _target, bytes calldata _data)
+    external
+    payable
+    onlyOwner
     returns (bytes memory)
     {
+        require(_target != address(mana), "The target should not be the MANA contract");
         // solium-disable-next-line security/no-call-value
         (bool success, bytes memory response) = _target.call.value(msg.value)(_data);
 
         if (!success) {
             revert("Call error");
         }
-        
+
         emit Executed(_target, _data);
 
         return response;
     }
 
     /**
-    * @dev Burn MANA owned by this contract 
+    * @dev Burn MANA owned by this contract
     */
     function burn() external {
         mana.burn(mana.balanceOf(address(this)));
