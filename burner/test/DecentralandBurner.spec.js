@@ -160,12 +160,12 @@ describe('DecentralandBurner', function() {
     })
 
     it('reverts if call is not a success', async function() {
-      const data = await manaContract.contract.methods
-        .mint(owner, INITIAL_VALUE)
+      const data = await erc721Contract.contract.methods
+        .mint(owner, 1)
         .encodeABI()
 
       await assertRevert(
-        burnerContract.execute(manaContract.address, data, fromOwner),
+        burnerContract.execute(erc721Contract.address, data, fromOwner),
         'Call error'
       )
     })
@@ -184,6 +184,17 @@ describe('DecentralandBurner', function() {
     it('reverts if not owner wants to execute', async function() {
       await assertRevert(
         burnerContract.execute(marketplaceContract.address, '0x')
+      )
+    })
+
+    it('reverts if target is MANA contract', async function() {
+      const data = await manaContract.contract.methods
+        .mint(owner, INITIAL_VALUE)
+        .encodeABI()
+
+      await assertRevert(
+        burnerContract.execute(manaContract.address, data, fromOwner),
+        'The target should not be the MANA contract'
       )
     })
   })
